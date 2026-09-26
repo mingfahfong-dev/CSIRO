@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CSIRO Report Builder v2</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23E8650F'/%3E%3Crect x='12' y='14' width='40' height='36' rx='4' fill='none' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M12 25h40M26 25v25' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M31 39l5 5 10-11' fill='none' stroke='%23FFE2C9' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='%23E8650F'/%3E%3Crect x='12' y='14' width='40' height='36' rx='4' fill='none' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M12 25h40M26 25v25' stroke='%23fff' stroke-width='4'/%3E%3Cpath d='M31 39l5 5 10-11' fill='none' stroke='%23FFE2C9' stroke-width='5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+<style>
+:root{
+  --bg:#EDF0F3; --surface:#FFFFFF; --ink:#18212B; --muted:#5B6875; --line:#D5DBE1;
+  --row-hover:#F5F7F9; --row-on:#FFF1E6; --accent:#E2620F; --accent-ink:#FFFFFF;
+  --warn:#B42318; --warn-bg:#FDECEA; --soft:#F6F8FA;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --bg:#12171D; --surface:#1A2129; --ink:#E7ECF1; --muted:#93A0AD; --line:#2C3642;
+  --row-hover:#212A34; --row-on:#3A2615; --accent:#F07A2A; --accent-ink:#1A0E05;
+  --warn:#FF8A7A; --warn-bg:#3A1C19; --soft:#151B22;
+}}
+:root[data-theme="dark"]{
+  --bg:#12171D; --surface:#1A2129; --ink:#E7ECF1; --muted:#93A0AD; --line:#2C3642;
+  --row-hover:#212A34; --row-on:#3A2615; --accent:#F07A2A; --accent-ink:#1A0E05;
+  --warn:#FF8A7A; --warn-bg:#3A1C19; --soft:#151B22;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-variant-numeric:tabular-nums}
+.wrap{max-width:1320px;margin:0 auto;padding:24px 20px 120px}
+header{display:flex;gap:20px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;margin-bottom:22px}
+.brand{display:flex;gap:14px;align-items:center}
+.brand svg{width:44px;height:44px;flex:none}
+h1{font-size:24px;line-height:1.2;margin:0;font-weight:600;letter-spacing:-.01em}
+.sub{margin:2px 0 0;color:var(--muted);font-size:14px}
+.lab{display:flex;gap:10px;flex-wrap:wrap}
+.lab label{display:flex;flex-direction:column;font-size:12px;color:var(--muted);gap:3px}
+input[type=text],input[type=search],textarea{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 10px}
+.lab input{width:150px}.lab input.code{width:70px}
+input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin-bottom:16px}
+.sec-head{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.step{width:24px;height:24px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:13px;font-weight:600;flex:none}
+h2{font-size:16px;margin:0;font-weight:600}
+.sec-head .note{color:var(--muted);font-size:13px;margin-left:auto}
+.sec-body{padding:16px 18px}
+textarea{width:100%;min-height:120px;resize:vertical;font-size:13px;white-space:pre;background:var(--soft)}
+.row-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+button{font:inherit;font-size:14px;border-radius:6px;padding:7px 14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+button:hover{background:var(--row-hover)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+button.primary:hover{filter:brightness(1.06);background:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.status{font-size:13px;color:var(--muted)}
+.status.bad{color:var(--warn)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:12px 18px;border-bottom:1px solid var(--line)}
+.toolbar input[type=search]{width:220px}
+.toolbar .count{margin-left:auto;font-size:13px;color:var(--muted)}
+.tablewrap{overflow:auto;max-height:62vh}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:6px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{position:sticky;top:0;background:var(--soft);font-weight:600;font-size:12.5px;z-index:1}
+th:nth-child(-n+3),td:nth-child(-n+3){text-align:left}
+td.id{font-weight:500}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--row-hover)}
+tbody tr.on{background:var(--row-on)}
+tbody tr.on td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
+input[type=checkbox]{width:17px;height:17px;accent-color:var(--accent);cursor:pointer;margin:0;vertical-align:middle}
+.flag{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:10px;background:var(--warn-bg);color:var(--warn);margin-left:6px;font-weight:500}
+td.err{color:var(--warn)}
+td.blank{color:var(--muted)}
+.empty{padding:36px 18px;text-align:center;color:var(--muted)}
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:12px 20px calc(12px + env(safe-area-inset-bottom,0px));z-index:5}
+.bar-in{max-width:1320px;margin:0 auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.bar .sel{font-size:14px}
+.bar .sel b{font-size:18px}
+.bar .spacer{flex:1}
+.ver{font-size:13px;font-weight:600;color:var(--accent);border:1px solid var(--accent);border-radius:5px;padding:1px 6px;vertical-align:middle;margin-left:6px}
+footer.foot{font-size:12px;color:var(--muted);text-align:center;padding:6px 0 0}
+.sheetwrap{overflow:auto;max-height:60vh;border-top:1px solid var(--line)}
+table.sheet{border-collapse:collapse;width:auto;font:13px/1.25 Arial,Helvetica,sans-serif;background:#fff;color:#000}
+.sheet th,.sheet td{border:1px solid #D4D4D4;padding:2px 6px;height:19px;min-width:64px;text-align:left;white-space:nowrap;position:static;background:#fff;font-weight:400;font-size:13px}
+.sheet thead th,.sheet td.rn{background:#EFEFEF;color:#555;text-align:center;font-size:11.5px;min-width:0;position:sticky}
+.sheet thead th{top:0;z-index:2}
+.sheet td.rn{left:0;z-index:1;width:34px}
+.sheet thead th.corner{left:0;z-index:3}
+.sheet td.colB{min-width:140px}
+.sheet td.h10{font-size:13px;font-weight:700;vertical-align:middle}
+.sheet td.h8{font-size:10.5px;font-weight:700;white-space:normal;vertical-align:middle;min-width:70px;max-width:78px}
+.sheet td.num{text-align:right}
+.sheet td.d{font-size:14px}
+.sheet tr.r6 td{height:44px}
+.sheet td.edit{padding:0;outline:none}
+.sheet td.edit input{font:14px Arial,Helvetica,sans-serif;color:#000;border:0;background:#FFF7EF;width:100%;min-width:160px;padding:2px 6px;height:22px;border-radius:0}
+.sheet td.edit input:focus{outline:2px solid var(--accent);outline-offset:-2px;background:#fff}
+.sheet td.edit.changed input{background:#FFE2C9;font-weight:700}
+.prev-empty{padding:28px 18px;text-align:center;color:var(--muted)}
+.edited{font-size:12px;color:var(--accent);margin-left:6px}
+.mail{display:none;border-color:var(--accent)}
+.mail.show{display:block}
+.mail p{margin:0 0 10px;max-width:72ch}
+.mail a.btn{display:inline-block;text-decoration:none;background:var(--accent);color:var(--accent-ink);font-weight:600;border-radius:6px;padding:7px 14px;font-size:14px}
+.mail .meta{font-size:13px;color:var(--muted);margin-top:10px}
+@media (max-width:640px){.wrap{padding:16px 12px 140px}.toolbar input[type=search]{width:100%}.sec-head .note{margin-left:0}}
+@media (prefers-reduced-motion:no-preference){tbody tr{transition:background .12s}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="brand">
+    <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="14" fill="#E8650F"/><rect x="12" y="14" width="40" height="36" rx="4" fill="none" stroke="#fff" stroke-width="4"/><path d="M12 25h40M26 25v25" stroke="#fff" stroke-width="4"/><path d="M31 39l5 5 10-11" fill="none" stroke="#FFE2C9" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div><h1>CSIRO Report Builder <span class="ver">v2</span></h1><p class="sub">Paste CCLAS results, tick the samples to report, export in the CSIRO Report layout.</p></div>
+  </div>
+  <div class="lab">
+    <label>Lab name<input type="text" id="labName" value="BHP Port Lab"></label>
+    <label>Lab code<input type="text" id="labCode" class="code" value="I"></label>
+  </div>
+</header>
+
+<section>
+  <div class="sec-head"><span class="step">1</span><h2>Paste lab data</h2>
+    <span class="note">Same columns as the FI Lab Data (Input) sheet. Header row optional.</span></div>
+  <div class="sec-body">
+    <textarea id="paste" spellcheck="false" placeholder="Copy the rows from the CCLAS export or the FI Lab Data (Input) sheet and paste here (Ctrl+V)"></textarea>
+    <div class="row-actions">
+      <button class="primary" id="loadBtn">Load rows</button>
+      <button id="clearBtn">Clear</button>
+      <span class="status" id="status"></span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="step">2</span><h2>Choose samples to report</h2>
+    <span class="note">Click a row to tick it. Shift-click ticks a range.</span></div>
+  <div class="toolbar">
+    <input type="search" id="filter" placeholder="Filter by sample ID" aria-label="Filter by sample ID">
+    <button id="tickAvg">Tick AVG rows</button>
+    <button id="tickShown">Tick all shown</button>
+    <button id="untickAll">Untick all</button>
+    <span class="count" id="count"></span>
+  </div>
+  <div class="tablewrap"><table id="grid"><thead></thead><tbody></tbody></table>
+    <div class="empty" id="empty">Paste lab data above to list the samples.</div></div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="step">3</span><h2>Preview export</h2>
+    <span class="note">Exactly what goes into the Excel file. Click a Sample ID to edit it. Clear it to go back to the original.</span></div>
+  <div class="toolbar"><button id="resetIds">Reset all edited IDs</button><span class="count" id="prevCount"></span></div>
+  <div class="sheetwrap" id="sheetWrap"></div>
+  <div class="prev-empty" id="prevEmpty">Tick samples above to see the report preview.</div>
+</section>
+
+<section class="mail" id="mailPanel">
+  <div class="sec-head"><span class="step">4</span><h2>Email the report</h2></div>
+  <div class="sec-body">
+    <p id="mailMsg"></p>
+    <a class="btn" id="mailLink" href="#" target="_blank" rel="noopener">Open email draft</a>
+    <div class="meta">To rachel.maree@csiro.au, cc portproductionlab@bhp.com, subject "CSIRO Report". Attach the downloaded file before sending.</div>
+  </div>
+</section>
+<footer class="foot">CSIRO Report Builder v2</footer>
+</div>
+
+<div class="bar"><div class="bar-in">
+  <span class="sel"><b id="selN">0</b> samples selected</span>
+  <span class="status" id="exportStatus"></span>
+  <span class="spacer"></span>
+  <button class="primary" id="exportBtn" disabled>Export and email</button>
+</div></div>
+
+<script>
+// ---- CSIRO report layout (mirrors 'CSIRO Report' sheet, columns B:AJ) ----
+// [column letter, report header, source header in CCLAS/FI Lab Data, number format]
+const REPORT_COLS = [
+  ['B','Sample ID','IDENT',null],
+  ['C','FeWet',null,null],
+  ['D','FeXRF','FE','0.00'],
+  ['E','Fe(II)',null,null],
+  ['F','SiO2','SIO2','0.00'],
+  ['G','CaO','CAO','0.000'],
+  ['H','Mn','MN','0.000'],
+  ['I','Al2O3','AL2O3','0.00'],
+  ['J','TiO2','TIO2','0.000'],
+  ['K','MgO','MGO','0.000'],
+  ['L','P','P','0.000'],
+  ['M','S','S','0.000'],
+  ['N','K2O','K2O','0.000'],
+  ['O','Sn',null,null],['P','V',null,null],['Q','Cr',null,null],['R','Co',null,null],
+  ['S','Ni',null,null],['T','Cu',null,null],['U','Zn',null,null],['V','As',null,null],
+  ['W','Pb',null,null],['X','Ba',null,null],
+  ['Y','LOI 105-371C',null,null],
+  ['Z','LOI 105-425C','XLOI425','0.00'],
+  ['AA','LOI 105-650C','XLOI650','0.00'],
+  ['AB','LOI 105-1000C',null,'0.00'],
+  ['AC','LOI 105-1000 (7764)',null,'0.00'],
+  ['AD','LOI 105-1000 (2596)','XLOI1000','0.00'],
+  ['AE','Na2O',null,null],['AF','Cl',null,null],['AG','Sr',null,null],
+  ['AH','Zr',null,null],['AI','Ctot',null,null],['AJ','Stot',null,null]
+];
+// Column positions in the FI Lab Data (Input) sheet (0-based, column A = 0),
+// used when the paste has no header row.
+const POSITIONAL = { TYPE:1, IDENT:2, FE:19, P:20, SIO2:21, AL2O3:22, TIO2:23, CAO:24,
+  MN:25, MGO:26, S:27, K2O:28, XLOI425:70, XLOI650:71, XLOI1000:72 };
+const MAPPED = REPORT_COLS.filter(c => c[2] && c[2] !== 'IDENT');
+
+function parseCell(raw) {
+  if (raw == null) return null;
+  const s = String(raw).trim();
+  if (s === '') return null;
+  if (s.startsWith('#')) return { error: s };
+  const n = Number(s.replace(/,/g, ''));
+  return Number.isFinite(n) && /^[-+]?[\d.,]+(e[-+]?\d+)?$/i.test(s) ? n : s;
+}
+
+function parsePaste(text) {
+  const lines = text.replace(/\r/g, '').split('\n');
+  const grid = lines.map(l => l.split('\t'));
+  let idx = null, headerFound = false, start = 0;
+  for (let r = 0; r < Math.min(grid.length, 10); r++) {
+    const up = grid[r].map(c => c.trim().toUpperCase());
+    const i = up.indexOf('IDENT');
+    if (i >= 0 && up.includes('FE')) {
+      idx = { TYPE: i - 1 };
+      up.forEach((h, j) => { if (h && idx[h] === undefined) idx[h] = j; });
+      headerFound = true; start = r + 1; break;
+    }
+  }
+  if (!idx) idx = POSITIONAL;
+  const missing = ['IDENT', ...MAPPED.map(c => c[2])].filter(k => idx[k] === undefined);
+  const rows = [];
+  for (let r = start; r < grid.length; r++) {
+    const cells = grid[r];
+    const id = (cells[idx.IDENT] || '').trim();
+    if (!id) continue;
+    const vals = {};
+    let hasErr = false, hasVal = false;
+    MAPPED.forEach(c => {
+      const v = parseCell(idx[c[2]] !== undefined ? cells[idx[c[2]]] : null);
+      if (v && typeof v === 'object') hasErr = true;
+      else if (v !== null) hasVal = true;
+      vals[c[2]] = v;
+    });
+    rows.push({
+      id, type: idx.TYPE >= 0 ? (cells[idx.TYPE] || '').trim() : '',
+      vals, hasErr, empty: !hasVal && !hasErr, checked: false
+    });
+  }
+  return { rows, headerFound, missing };
+}
+
+async function buildWorkbook(ExcelJS, rows, labName, labCode) {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet('CSIRO Report');
+  const f10 = { name: 'Arial', size: 10, family: 2 };
+  const f10b = { name: 'Arial', size: 10, family: 2, bold: true };
+  const f11 = { name: 'Arial', size: 11, family: 2 };
+  ws.getColumn('B').width = 18.28515625;
+  const put = (addr, v, font, fmt) => {
+    const c = ws.getCell(addr);
+    if (v !== null && v !== undefined) c.value = v;
+    c.font = font;
+    if (fmt) c.numFmt = fmt;
+  };
+  put('B1', 'Lab name:', f10); put('C1', labName, f10);
+  put('B2', 'Lab code:', f10); put('C2', labCode, f10);
+  const f8b = { name: 'Arial', size: 8, family: 2, bold: true };
+  REPORT_COLS.forEach(([col, head]) => {
+    const isLoi = head.startsWith('LOI');
+    put(col + '6', head, isLoi ? f8b : f10b);
+    ws.getCell(col + '6').alignment = isLoi ? { vertical: 'middle', wrapText: true } : { vertical: 'middle' };
+    if (col !== 'B') put(col + '7', '%', f10b);
+  });
+  rows.forEach((row, i) => {
+    const r = 8 + i;
+    REPORT_COLS.forEach(([col, , src, fmt]) => {
+      let v = null;
+      if (src === 'IDENT') v = (row.editId && row.editId.trim()) || row.id;
+      else if (src) {
+        v = row.vals[src];
+        if (v && typeof v === 'object') v = null; // #VALUE! etc. left blank
+      }
+      put(col + r, v, f11, fmt);
+    });
+  });
+  for (let r = 1; r < 8 + rows.length; r++) ws.getRow(r).height = r === 6 ? 33.75 : 14.25;
+  return wb.xlsx.writeBuffer();
+}
+
+if (typeof module !== 'undefined') module.exports = { REPORT_COLS, parsePaste, buildWorkbook };
+
+</script>
+<script>
+const FILE_NAME = 'CSIRO Report - Customer Copy.xlsx';
+const MAIL = { to:'rachel.maree@csiro.au', cc:'portproductionlab@bhp.com', subject:'CSIRO Report',
+  body:'Hi Rachel,\r\n\r\nPlease find attached the CSIRO Report results.\r\n\r\nRegards' };
+const SHOWN_COLS = REPORT_COLS.filter(c => c[2] && c[2] !== 'IDENT');
+const $ = id => document.getElementById(id);
+let rows = [], lastClicked = null;
+
+let dlPromise = Promise.resolve(null);
+try { if (window.claude && typeof window.claude.use === 'function') dlPromise = window.claude.use('downloads').catch(() => null); } catch (e) {}
+
+function dec(fmt){ return fmt === '0.000' ? 3 : 2; }
+function fmtVal(v, fmt){
+  if (v === null || v === undefined) return '';
+  if (typeof v === 'object') return v.error;
+  if (typeof v === 'number') return fmt ? v.toFixed(dec(fmt)) : String(v);
+  return v;
+}
+
+function buildHead(){
+  const tr = document.createElement('tr');
+  tr.innerHTML = '<th><input type="checkbox" id="allBox" aria-label="Tick all shown"></th><th>Sample ID</th><th>Type</th>' +
+    SHOWN_COLS.map(c => `<th title="Report column ${c[0]}">${c[1]}</th>`).join('');
+  $('grid').tHead.replaceChildren(tr);
+  $('allBox').addEventListener('change', e => { visibleRows().forEach(r => r.checked = e.target.checked); render(); });
+}
+
+function visibleRows(){
+  const q = $('filter').value.trim().toLowerCase();
+  return q ? rows.filter(r => r.id.toLowerCase().includes(q) || (r.editId || '').toLowerCase().includes(q)) : rows;
+}
+
+function render(){
+  const tb = $('grid').tBodies[0];
+  const vis = visibleRows();
+  tb.replaceChildren(...vis.map(r => {
+    const tr = document.createElement('tr');
+    tr.className = r.checked ? 'on' : '';
+    const flag = r.hasErr ? '<span class="flag">#VALUE!</span>' : r.empty ? '<span class="flag">no results</span>' : '';
+    const td0 = document.createElement('td'); const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = r.checked; cb.setAttribute('aria-label', 'Report ' + r.id); td0.append(cb);
+    tr.append(td0);
+    tr.insertAdjacentHTML('beforeend', `<td class="id"></td><td>${esc(r.type)}</td>` +
+      SHOWN_COLS.map(c => { const v = r.vals[c[2]];
+        return `<td class="${v && typeof v === 'object' ? 'err' : ''}">${esc(fmtVal(v, c[3]))}</td>`; }).join(''));
+    tr.children[1].textContent = r.id; tr.children[1].insertAdjacentHTML('beforeend', flag + (r.editId ? `<span class="edited">reported as ${esc(r.editId)}</span>` : ''));
+    tr.addEventListener('click', e => onRowClick(r, e));
+    return tr;
+  }));
+  $('empty').style.display = rows.length ? 'none' : 'block';
+  $('empty').textContent = rows.length ? '' : 'Paste lab data above to list the samples.';
+  if (rows.length && !vis.length) { $('empty').style.display = 'block'; $('empty').textContent = 'No samples match that filter.'; }
+  const n = rows.filter(r => r.checked).length;
+  $('selN').textContent = n;
+  $('exportBtn').disabled = n === 0;
+  $('count').textContent = rows.length ? `${vis.length} of ${rows.length} shown` : '';
+  renderPreview();
+  const ab = $('allBox'); if (ab) { const c = vis.filter(r => r.checked).length; ab.checked = vis.length > 0 && c === vis.length; ab.indeterminate = c > 0 && c < vis.length; }
+}
+
+function onRowClick(r, e){
+  const vis = visibleRows();
+  const target = e.target.type === 'checkbox' ? e.target.checked : !r.checked;
+  if (e.shiftKey && lastClicked && vis.includes(lastClicked)) {
+    const a = vis.indexOf(lastClicked), b = vis.indexOf(r);
+    vis.slice(Math.min(a,b), Math.max(a,b) + 1).forEach(x => x.checked = target);
+  } else r.checked = target;
+  lastClicked = r; render();
+}
+
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function load(){
+  const text = $('paste').value;
+  const st = $('status');
+  if (!text.trim()) { st.textContent = 'Nothing pasted yet.'; st.className = 'status bad'; return; }
+  const p = parsePaste(text);
+  rows = p.rows; lastClicked = null; $('filter').value = '';
+  if (!rows.length) { st.textContent = 'No sample rows found. Check the paste includes the IDENT column.'; st.className = 'status bad'; render(); return; }
+  const errs = rows.filter(r => r.hasErr).length;
+  let msg = `${rows.length} samples loaded (${p.headerFound ? 'header row found' : 'no header row, reading columns from A'}).`;
+  if (errs) msg += ` ${errs} flagged with #VALUE!.`;
+  if (p.missing.length) msg += ` Missing columns: ${p.missing.join(', ')}.`;
+  st.textContent = msg; st.className = p.missing.length ? 'status bad' : 'status';
+  $('mailPanel').classList.remove('show');
+  render();
+}
+
+async function exportReport(){
+  const sel = rows.filter(r => r.checked);
+  const es = $('exportStatus');
+  if (!sel.length) return;
+  if (typeof ExcelJS === 'undefined') { es.textContent = 'Excel library did not load. Check the internet connection and reload.'; es.className = 'status bad'; return; }
+  $('exportBtn').disabled = true; es.className = 'status'; es.textContent = 'Building workbook…';
+  try {
+    const buf = await buildWorkbook(ExcelJS, sel, $('labName').value.trim(), $('labCode').value.trim());
+    const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const dl = await Promise.race([dlPromise, new Promise(r => setTimeout(() => r(null), 1500))]);
+    if (dl) {
+      try { await dl.save({ filename: FILE_NAME, data: blob }); }
+      catch (err) {
+        es.className = 'status bad';
+        es.textContent = err && err.code === 'declined' ? 'Download cancelled.' : 'Download failed: ' + (err && err.message || err);
+        return;
+      }
+    } else {
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = FILE_NAME;
+      document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    }
+    es.textContent = `Saved ${FILE_NAME} (${sel.length} samples).`;
+    const href = `mailto:${MAIL.to}?cc=${encodeURIComponent(MAIL.cc)}&subject=${encodeURIComponent(MAIL.subject)}&body=${encodeURIComponent(MAIL.body)}`;
+    $('mailLink').href = href;
+    $('mailMsg').textContent = `${FILE_NAME} is in your downloads folder. Open the draft, attach the file and send.`;
+    $('mailPanel').classList.add('show');
+    let opened = null; try { opened = window.open(href, '_blank'); } catch (e) {}
+    $('mailLink').textContent = opened ? 'Open email draft again' : 'Open email draft';
+    $('mailPanel').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
+  } catch (err) {
+    es.className = 'status bad'; es.textContent = 'Export failed: ' + (err && err.message || err);
+  } finally { $('exportBtn').disabled = rows.filter(r => r.checked).length === 0; }
+}
+
+function colLetter(n){ let s=''; while(n>0){ const m=(n-1)%26; s=String.fromCharCode(65+m)+s; n=Math.floor((n-1)/26);} return s; }
+
+function renderPreview(){
+  const sel = rows.filter(r => r.checked);
+  const wrap = $('sheetWrap');
+  $('prevEmpty').style.display = sel.length ? 'none' : 'block';
+  wrap.style.display = sel.length ? 'block' : 'none';
+  const nEdited = sel.filter(r => r.editId).length;
+  $('prevCount').textContent = sel.length ? `${sel.length} sample rows, ${nEdited} ID${nEdited===1?'':'s'} edited` : '';
+  $('resetIds').disabled = !rows.some(r => r.editId);
+  if (!sel.length) { wrap.replaceChildren(); return; }
+  const active = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.idx : null;
+  const ncol = REPORT_COLS.length; // B..AJ
+  const t = document.createElement('table'); t.className = 'sheet';
+  let h = '<thead><tr><th class="corner"></th><th>A</th>' + REPORT_COLS.map(c => `<th>${c[0]}</th>`).join('') + '</tr></thead><tbody>';
+  const blankRow = n => `<tr><td class="rn">${n}</td><td></td>` + '<td></td>'.repeat(ncol) + '</tr>';
+  h += `<tr><td class="rn">1</td><td></td><td class="colB">Lab name:</td><td>${esc($('labName').value.trim())}</td>` + '<td></td>'.repeat(ncol-2) + '</tr>';
+  h += `<tr><td class="rn">2</td><td></td><td class="colB">Lab code:</td><td>${esc($('labCode').value.trim())}</td>` + '<td></td>'.repeat(ncol-2) + '</tr>';
+  h += blankRow(3) + blankRow(4) + blankRow(5);
+  h += '<tr class="r6"><td class="rn">6</td><td></td>' + REPORT_COLS.map(c => `<td class="${c[1].startsWith('LOI') ? 'h8' : 'h10'}${c[0]==='B'?' colB':''}">${esc(c[1])}</td>`).join('') + '</tr>';
+  h += '<tr><td class="rn">7</td><td></td>' + REPORT_COLS.map(c => `<td class="h10${c[0]==='B'?' colB':''}">${c[0]==='B'?'':'%'}</td>`).join('') + '</tr>';
+  sel.forEach((r, i) => {
+    h += `<tr><td class="rn">${8+i}</td><td></td>`;
+    REPORT_COLS.forEach(([col, , src, fmt]) => {
+      if (src === 'IDENT') {
+        h += `<td class="edit colB${r.editId ? ' changed' : ''}"><input type="text" data-idx="${rows.indexOf(r)}" value="${esc(r.editId || r.id)}" aria-label="Sample ID for ${esc(r.id)}" title="Original: ${esc(r.id)}"></td>`;
+        return;
+      }
+      let v = src ? r.vals[src] : null;
+      if (v && typeof v === 'object') v = null;
+      h += `<td class="d${typeof v === 'number' ? ' num' : ''}">${esc(fmtVal(v, fmt))}</td>`;
+    });
+    h += '</tr>';
+  });
+  t.innerHTML = h + '</tbody>';
+  const sx = wrap.scrollLeft, sy = wrap.scrollTop;
+  wrap.replaceChildren(t); wrap.scrollLeft = sx; wrap.scrollTop = sy;
+  t.querySelectorAll('td.edit input').forEach(inp => {
+    const r = rows[+inp.dataset.idx];
+    inp.addEventListener('input', () => {
+      const v = inp.value.trim();
+      r.editId = v && v !== r.id ? v : '';
+      inp.parentElement.classList.toggle('changed', !!r.editId);
+    });
+    inp.addEventListener('focus', () => { inp.dataset.before = r.editId || ''; });
+    inp.addEventListener('change', () => { if (!inp.value.trim()) inp.value = r.id; setTimeout(render, 0); });
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        const all = [...t.querySelectorAll('td.edit input')];
+        const next = all[all.indexOf(inp) + (e.key === 'ArrowUp' ? -1 : 1)];
+        if (next) { next.focus(); next.select(); } else inp.blur();
+      } else if (e.key === 'Escape') { r.editId = inp.dataset.before || ''; inp.value = r.editId || r.id; inp.parentElement.classList.toggle('changed', !!r.editId); inp.blur(); render(); }
+    });
+  });
+  if (active !== null && active !== undefined) {
+    const el = t.querySelector(`input[data-idx="${active}"]`); if (el) { el.focus(); el.select(); }
+  }
+}
+
+buildHead(); render();
+$('resetIds').addEventListener('click', () => { rows.forEach(r => r.editId = ''); render(); });
+$('labName').addEventListener('input', renderPreview);
+$('labCode').addEventListener('input', renderPreview);
+$('loadBtn').addEventListener('click', load);
+$('paste').addEventListener('paste', () => setTimeout(load, 0));
+$('clearBtn').addEventListener('click', () => { $('paste').value=''; rows=[]; $('status').textContent=''; $('mailPanel').classList.remove('show'); render(); });
+$('filter').addEventListener('input', render);
+$('tickAvg').addEventListener('click', () => { rows.forEach(r => { if (/\bAVG\b/i.test(r.id)) r.checked = true; }); render(); });
+$('tickShown').addEventListener('click', () => { visibleRows().forEach(r => r.checked = true); render(); });
+$('untickAll').addEventListener('click', () => { rows.forEach(r => r.checked = false); render(); });
+$('exportBtn').addEventListener('click', exportReport);
+</script>
+</body>
+</html>
